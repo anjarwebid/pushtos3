@@ -15,9 +15,11 @@ skey = ""
 patharray = []
 bucket = ''
 filestamp = time.strftime('%Y-%m-%d')
+#create log under /var/log
 f = open("/var/log/"+appname, "a") 
 
 def chkcfg():
+    #read config file
     global appfolder
     global dbserver
     global dbusr
@@ -32,7 +34,7 @@ def chkcfg():
         print "config file %s.cfg not found!" % (appname)
         print os.path.abspath(__file__).strip(appname+".py")
     else:
-        #if config file exist, just read config file
+        #if config file exist, read config file
         readcfg = ConfigParser.ConfigParser()	
         readcfg.read(os.path.abspath(__file__).strip(appname+".py")+"%s" % (appname)+".conf")
         dbserver = readcfg.get('basic', 'dbserver')
@@ -46,7 +48,6 @@ def chkcfg():
         #check and create log
         f.write ("backup "+filestamp+"\n")
         backupdb()
-        #cektanggal()
 
 def backupdb():
     # get database list
@@ -64,12 +65,12 @@ def backupdb():
         filename = "%s/%s-%s.sql" % (newpath, database, filestamp)
         #generate backup file
         os.popen("mysqldump -u %s -p%s -h %s -e --opt -c %s --skip-lock-tables | gzip -c > %s.gz" % (dbusr, dbpasswd, dbserver, database, filename))
-        f.write ("Backup database "+database+" finished\n")
-    f.write ("Database Backup finished\n")
+        f.write ("Backup "+database+" database finished\n")
+    f.write ("Databases Backup finished\n")
     backupfile()
 
 def backupfile():
-    f = open("/var/log/"+appname, "w") 
+    # read list folder from configuration file
     for x in patharray:
         lastfolder = os.path.basename(os.path.normpath(x))
         newpath = "%s%s/file" % (appfolder,filestamp)
@@ -78,7 +79,7 @@ def backupfile():
         tar = tarfile.open(os.path.join(newpath, lastfolder+'.tar.gz'), 'w:gz')
         tar.add(x,arcname=lastfolder)
         tar.close()
-        f.write ("Backup folder "+lastfolder+" finished\n")
+        f.write ("Backup "+lastfolder+" folder finished\n")
     f.write ("All files backup finished\n")
     uploadbackup()        
 
@@ -88,7 +89,7 @@ def uploadbackup():
     tar.add(os.path.join(appfolder, filestamp),arcname=lastfolder)
     tar.close()
     
-    #backup monthly
+    #monthly backup upload
     if time.strftime("%d") == "01":
         f.write ("monthly\n")
         print "monthly"
@@ -100,7 +101,7 @@ def uploadbackup():
         k.set_contents_from_filename("%s" % os.path.join(appfolder, filestamp+'.tar.gz'))
         f.write ("Monthly backup uploaded to s3\n")
         print "Monthly backup uploaded to s3"
-        #delete file backup bulan 
+        #delete last month backup file 
         today = datetime.date.today()
         first = datetime.date(day=1, month=today.month, year=today.year)
         lastMonth = first - datetime.timedelta(days=1)    
@@ -110,7 +111,7 @@ def uploadbackup():
            s3bucket.delete_key(k)
 
         
-    #backup weekly
+    #weekly backkup upload
     if time.strftime("%a") == "Mon": 
         f.write ("Weekly\n")
         print "Weekly"
@@ -130,7 +131,7 @@ def uploadbackup():
         if k.exists:
             s3bucket.delete_key(k)
         
-    #backup daily
+    #daily backup upload
     f.write ("Daily\n")
     print "Daily"
     conn = S3Connection(akey, skey)
@@ -141,7 +142,7 @@ def uploadbackup():
     k.set_contents_from_filename("%s" % os.path.join(appfolder, filestamp+'.tar.gz'))
     f.write ("Daily backup uploaded to s3\n")
     print "Daily backup uploaded to s3"
-    #delete file backup 4 hari kemarin
+    #delete 4 days ago backup file
     last4days = datetime.date.today()-datetime.timedelta(4)
     last4daysfile = "%s-%s-%s.tar.gz" % (last4days.strftime('%Y'), last4days.strftime("%m"), last4days.strftime('%d'))
     k.key = "daily/%s" % (last4daysfile)
@@ -153,8 +154,8 @@ def uploadbackup():
     
 def deletefolder():
     if os.popen("rm -rf -R %s/%s*" % (appfolder,filestamp)):
-        f.write ("Folder Backup "+filestamp+" Deleted\n")
-        print "Folder Backup %s Deleted" % filestamp
+        f.write ("Backup Folder "+filestamp+" Deleted\n")
+        print "Backup Folder %s Deleted" % filestamp
     f.write ("Backup completed\n")
     f.close
     print "Backup completed"
