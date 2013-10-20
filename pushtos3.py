@@ -47,7 +47,7 @@ def chkcfg():
 
 def backupdb():
     #check and create log
-    f = open("/var/log/fullbackups3", "w") 
+    f = open("/var/log/pushtos3", "w") 
     f.write ("backup on "+filestamp+"\n")
     # get database list
     database_list_command="mysql -u %s -p%s -h %s --silent -N -e 'show databases'" % (dbusr, dbpasswd, dbserver)
@@ -70,7 +70,7 @@ def backupdb():
     backupfile()
 
 def backupfile():
-    f = open("/var/log/fullbackups3", "w") 
+    f = open("/var/log/pushtos3", "w") 
     for x in patharray:
         lastfolder = os.path.basename(os.path.normpath(x))
         newpath = "%s%s/file" % (appfolder,filestamp)
