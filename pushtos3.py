@@ -33,7 +33,7 @@ def chkcfg():
     else:
         #if config file exist, just read config file
         readcfg = ConfigParser.ConfigParser()	
-        readcfg.read(os.path.abspath(__file__).strip(appname+".py")+"%s" % (appname)+".cfg")
+        readcfg.read(os.path.abspath(__file__).strip(appname+".py")+"%s" % (appname)+".conf")
         dbserver = readcfg.get('basic', 'dbserver')
         dbusr = readcfg.get('basic', 'dbuser')
         dbpasswd = readcfg.get('basic', 'dbpassword')
