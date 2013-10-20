@@ -42,13 +42,13 @@ def chkcfg():
         skey = readcfg.get('basic','aws_secret_access_key')
         bucket = readcfg.get('basic','bucket')
         patharray = pathtobackup.split(',')
+        #check and create log
+        f = open("/var/log/"+appname, "w") 
+        f.write ("backup on "+filestamp+"\n")
         backupdb()
         #cektanggal()
 
 def backupdb():
-    #check and create log
-    f = open("/var/log/pushtos3", "w") 
-    f.write ("backup on "+filestamp+"\n")
     # get database list
     database_list_command="mysql -u %s -p%s -h %s --silent -N -e 'show databases'" % (dbusr, dbpasswd, dbserver)
     #split database list
@@ -66,11 +66,10 @@ def backupdb():
         os.popen("mysqldump -u %s -p%s -h %s -e --opt -c %s --skip-lock-tables | gzip -c > %s.gz" % (dbusr, dbpasswd, dbserver, database, filename))
         f.write ("Backup database "+database+" finished\n")
     f.write ("Database Backup finished\n")
-    f.close
     backupfile()
 
 def backupfile():
-    f = open("/var/log/pushtos3", "w") 
+    f = open("/var/log/"+appname, "w") 
     for x in patharray:
         lastfolder = os.path.basename(os.path.normpath(x))
         newpath = "%s%s/file" % (appfolder,filestamp)
@@ -80,8 +79,7 @@ def backupfile():
         tar.add(x,arcname=lastfolder)
         tar.close()
         f.write ("Backup folder "+lastfolder+" finished\n")
-    f.write ("All finished\n")
-    f.close
+    f.write ("All files backup finished\n")
     uploadbackup()        
 
 def uploadbackup():
@@ -92,6 +90,7 @@ def uploadbackup():
     
     #backup monthly
     if time.strftime("%d") == "01":
+        f.write ("monthly\n")
         print "monthly"
         conn = S3Connection(akey, skey)
         s3bucket = conn.get_bucket(bucket)
@@ -99,6 +98,7 @@ def uploadbackup():
         #upload data
         k.key = "monthly/%s.tar.gz" % (filestamp)
         k.set_contents_from_filename("%s" % os.path.join(appfolder, filestamp+'.tar.gz'))
+        f.write ("Monthly backup uploaded to s3\n")
         print "Monthly backup uploaded to s3"
         #delete file backup bulan 
         today = datetime.date.today()
@@ -112,6 +112,7 @@ def uploadbackup():
         
     #backup weekly
     if time.strftime("%a") == "Mon": 
+        f.write ("Weekly\n")
         print "Weekly"
         conn = S3Connection(akey, skey)
         s3bucket = conn.get_bucket(bucket)
@@ -119,6 +120,7 @@ def uploadbackup():
         #upload data
         k.key = "weekly/%s.tar.gz" % (filestamp)
         k.set_contents_from_filename("%s" % os.path.join(appfolder, filestamp+'.tar.gz'))
+        f.write ("Weekly backup uploaded to s3\n")
         print "Weekly backup uploaded to s3"
         #delete file last monday dari folder weekly
         today = datetime.date.today()
@@ -129,6 +131,7 @@ def uploadbackup():
             s3bucket.delete_key(k)
         
     #backup daily
+    f.write ("Daily\n")
     print "Daily"
     conn = S3Connection(akey, skey)
     s3bucket = conn.get_bucket(bucket)
@@ -136,6 +139,7 @@ def uploadbackup():
     #upload data
     k.key = "daily/%s.tar.gz" % (filestamp)
     k.set_contents_from_filename("%s" % os.path.join(appfolder, filestamp+'.tar.gz'))
+    f.write ("Daily backup uploaded to s3\n")
     print "Daily backup uploaded to s3"
     #delete file backup 4 hari kemarin
     last4days = datetime.date.today()-datetime.timedelta(4)
@@ -149,7 +153,9 @@ def uploadbackup():
     
 def deletefolder():
     if os.popen("rm -rf -R %s/%s*" % (appfolder,filestamp)):
+        f.write ("Folder Backup "+filestamp+" Deleted\n")
         print "Folder Backup %s Deleted" % filestamp
+    f.write ("Backup completed\n")
     print "Backup completed"
         
 if __name__ == "__main__":
