@@ -15,6 +15,7 @@ skey = ""
 patharray = []
 bucket = ''
 filestamp = time.strftime('%Y-%m-%d')
+f = open("/var/log/"+appname, "w") 
 
 def chkcfg():
     global appfolder
@@ -43,8 +44,7 @@ def chkcfg():
         bucket = readcfg.get('basic','bucket')
         patharray = pathtobackup.split(',')
         #check and create log
-        f = open("/var/log/"+appname, "w") 
-        f.write ("backup on "+filestamp+"\n")
+        f.write ("backup "+filestamp+"\n")
         backupdb()
         #cektanggal()
 
@@ -156,6 +156,7 @@ def deletefolder():
         f.write ("Folder Backup "+filestamp+" Deleted\n")
         print "Folder Backup %s Deleted" % filestamp
     f.write ("Backup completed\n")
+    f.close
     print "Backup completed"
         
 if __name__ == "__main__":
