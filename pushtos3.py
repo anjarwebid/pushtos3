@@ -15,7 +15,7 @@ skey = ""
 patharray = []
 bucket = ''
 filestamp = time.strftime('%Y-%m-%d')
-f = open("/var/log/"+appname, "w") 
+f = open("/var/log/"+appname, "a") 
 
 def chkcfg():
     global appfolder
